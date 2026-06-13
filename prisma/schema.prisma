@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -6,6 +7,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 
 enum Channel {
   WHATSAPP
@@ -46,25 +48,21 @@ enum EventType {
   FAILED
 }
 
+
 model Customer {
-  id             String    @id @default(cuid())
-  name           String
-  email          String    @unique
-  phone          String?
-  city           String?
-  country        String?   @default("India")
-  tags           String[]  @default([])
-  totalSpend     Float     @default(0)
-  orderCount     Int       @default(0)
-  lastOrderAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  orders         Order[]
-  communications Communication[]
-
-  @@index([city])
-  @@index([lastOrderAt])
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  phone       String?
+  city        String?
+  country     String?   @default("India")
+  tags        String[]  @default([])
+  totalSpend  Float     @default(0)
+  orderCount  Int       @default(0)
+  lastOrderAt DateTime?
+  orders      Order[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Order {
@@ -77,7 +75,6 @@ model Order {
   createdAt  DateTime @default(now())
 
   @@index([customerId])
-  @@index([createdAt])
 }
 
 model Segment {
@@ -86,67 +83,63 @@ model Segment {
   description String?
   ruleJson    Json
   source      SegmentSource @default(HUMAN)
-  createdAt   DateTime      @default(now())
-
   campaigns   Campaign[]
+  createdAt   DateTime      @default(now())
 }
 
 model Campaign {
-  id              String         @id @default(cuid())
+  id              String          @id @default(cuid())
   name            String
   goal            String?
   channel         Channel
   messageTemplate String
-  status          CampaignStatus @default(DRAFT)
+  status          CampaignStatus  @default(DRAFT)
   segmentId       String?
-  segment         Segment?       @relation(fields: [segmentId], references: [id])
-  audienceSize    Int            @default(0)
+  segment         Segment?        @relation(fields: [segmentId], references: [id], onDelete: SetNull)
+  audienceSize    Int             @default(0)
   launchedAt      DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
   communications  Communication[]
-
-  @@index([status])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 model Communication {
-  id              String              @id @default(cuid())
+  id              String               @id @default(cuid())
   campaignId      String
-  campaign        Campaign            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign        Campaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   customerId      String
-  customer        Customer            @relation(fields: [customerId], references: [id])
   channel         Channel
   recipient       String
   renderedMessage String
-  status          CommunicationStatus @default(QUEUED)
-  statusRank      Int                 @default(0)
-  idempotencyKey  String              @unique
-  attempts        Int                 @default(0)
+  status          CommunicationStatus  @default(QUEUED)
+  statusRank      Int                  @default(0)
+  idempotencyKey  String               @unique
+  attempts        Int                  @default(0)
   failureReason   String?
-
-  queuedAt        DateTime            @default(now())
   sentAt          DateTime?
   deliveredAt     DateTime?
   readAt          DateTime?
   clickedAt       DateTime?
   convertedAt     DateTime?
   failedAt        DateTime?
-
   events          CommunicationEvent[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
   @@index([campaignId])
-  @@index([status])
   @@index([customerId])
+  @@index([status])
 }
 
 model CommunicationEvent {
   id              String        @id @default(cuid())
   communicationId String
   communication   Communication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  eventId         String        @unique
   type            EventType
   payload         Json?
-  occurredAt      DateTime      @default(now())
+  occurredAt      DateTime
+  createdAt       DateTime      @default(now())
 
   @@index([communicationId])
 }
