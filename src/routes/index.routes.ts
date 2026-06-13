@@ -8,6 +8,7 @@ import aiRoutes from "./ai.routes"
 import campaignRoutes from "./campaigns.routes"
 import receiptRoutes from "./receipts.routes"
 import communicationRoutes from "./communications.routes"
+import agentRoutes from "./agent.routes"
 
 const router = Router()
 
@@ -19,5 +20,6 @@ router.use("/ai", aiRoutes)
 router.use("/campaigns", campaignRoutes)
 router.use("/receipts", receiptRoutes)
 router.use("/communications", communicationRoutes)
+router.use("/agent", agentRoutes)
 
 export default router
