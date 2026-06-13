@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+build/
+coverage/
+*.log
+npm-debug.log*
+.DS_Store
+prisma/*.db
+/channel-service/node_modules/
+/channel-service/dist/
