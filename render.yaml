@@ -1,0 +1,55 @@
+# Reachly backend Blueprint
+# Provisions: Postgres + Redis (Key Value) + CRM API (with co-located dispatch worker) + stubbed Channel Service
+databases:
+  - name: reachly-postgres
+    plan: free
+    databaseName: reachly
+    user: reachly
+
+services:
+  # ---- Redis / Key Value (BullMQ broker) ----
+  - type: redis
+    name: reachly-redis
+    plan: free
+    maxmemoryPolicy: noeviction   # BullMQ requires no key eviction
+    ipAllowList: []               # internal-only, no public access
+
+  # ---- CRM API + dispatch worker (one free web service) ----
+  - type: web
+    name: reachly-crm-api
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npx prisma generate
+    startCommand: 'npx prisma migrate deploy && npx concurrently -k -n api,worker "npx tsx src/index.ts" "npx tsx src/queue/dispatch.worker.ts"'
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reachly-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: reachly-redis
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false                # set in dashboard (secret)
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash-lite
+      - key: CHANNEL_SERVICE_URL
+        sync: false                # set to the channel URL after first deploy
+      - key: PUBLIC_BASE_URL
+        sync: false                # set to this CRM API URL after first deploy
+
+  # ---- Stubbed Channel Service ----
+  - type: web
+    name: reachly-channel
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev
+    startCommand: npx tsx channel-service/src/index.ts
+    envVars:
+      - key: NODE_ENV
+        value: production
